@@ -16,12 +16,54 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+        checkTypes {
+            javaCompileOptions.annotationProcessorOptions.
+                    classNames.add("org.checkerframework.checker.keystore.KeyStoreChecker")
+            // Uncomment to do the strongboxbacked checking.
+            // javaCompileOptions.annotationProcessorOptions.arguments.put("lint", "strongboxbacked")
+        }
+    }
+    compileOptions {
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
+    }
+}
+
+repositories {
+    mavenLocal()
+}
+
+configurations {
+    checkerFrameworkAnnotatedJDK {
+        description = 'a copy of JDK classes with Checker Framework type qualifiers inserted'
+    }
+    errorproneJavac {
+        description = 'required to run the Checker Framework.'
     }
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile project(':core')
-    compile 'com.afollestad.material-dialogs:core:0.8.5.9'
-    testCompile 'junit:junit:4.12'
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation project(':core')
+    implementation 'com.afollestad.material-dialogs:core:0.8.5.9'
+    testImplementation 'junit:junit:4.12'
+
+    ext.checkerFrameworkVersion = '3.0.1'
+    annotationProcessor "org.checkerframework:keystore-checker:0.1-SNAPSHOT"
+    implementation files("../../../../keystore-checker-qual-android/build/libs/keystore-checker-qual-android.jar")
+    checkerFrameworkAnnotatedJDK "org.checkerframework:jdk8:${checkerFrameworkVersion}"
+    compileOnly "org.checkerframework:checker-qual-android:${checkerFrameworkVersion}"
+    errorproneJavac 'com.google.errorprone:javac:9+181-r4173-1'
+}
+
+gradle.projectsEvaluated {
+    tasks.withType(JavaCompile).all { compile ->
+        if (compile.name.contains("CheckTypes")) {
+//            compile.options.compilerArgs += [
+//                    "-Xbootclasspath/p:${configurations.checkerFrameworkAnnotatedJDK.asPath}"
+//            ]
+            options.fork = true
+            options.forkOptions.jvmArgs += ["-Xbootclasspath/p:${configurations.errorproneJavac.asPath}"]
+        }
+    }
 }
