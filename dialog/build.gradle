@@ -21,6 +21,7 @@ android {
                     classNames.add("org.checkerframework.checker.keystore.KeyStoreChecker")
             // Uncomment to do the strongboxbacked checking.
             // javaCompileOptions.annotationProcessorOptions.arguments.put("lint", "strongboxbacked")
+            javaCompileOptions.annotationProcessorOptions.arguments.put("stubs", "hardwarebacked.astub")
         }
     }
     compileOptions {
@@ -48,10 +49,10 @@ dependencies {
     implementation 'com.afollestad.material-dialogs:core:0.8.5.9'
     testImplementation 'junit:junit:4.12'
 
-    ext.checkerFrameworkVersion = '3.0.1'
+    ext.checkerFrameworkVersion = '3.1.1'
     annotationProcessor "org.checkerframework:keystore-checker:0.1-SNAPSHOT"
     implementation files("../../../../keystore-checker-qual-android/build/libs/keystore-checker-qual-android.jar")
-    checkerFrameworkAnnotatedJDK "org.checkerframework:jdk8:${checkerFrameworkVersion}"
+    checkerFrameworkAnnotatedJDK files("../../../../jdk8.jar")
     compileOnly "org.checkerframework:checker-qual-android:${checkerFrameworkVersion}"
     errorproneJavac 'com.google.errorprone:javac:9+181-r4173-1'
 }
@@ -59,9 +60,9 @@ dependencies {
 gradle.projectsEvaluated {
     tasks.withType(JavaCompile).all { compile ->
         if (compile.name.contains("CheckTypes")) {
-//            compile.options.compilerArgs += [
-//                    "-Xbootclasspath/p:${configurations.checkerFrameworkAnnotatedJDK.asPath}"
-//            ]
+            compile.options.compilerArgs += [
+                    "-Xbootclasspath/p:${configurations.checkerFrameworkAnnotatedJDK.asPath}"
+            ]
             options.fork = true
             options.forkOptions.jvmArgs += ["-Xbootclasspath/p:${configurations.errorproneJavac.asPath}"]
         }
